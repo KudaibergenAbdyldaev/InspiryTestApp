@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">TestApp</string>
+    <string name="hello_world">Hello World!</string>
+    <string name="render_template">Render Template</string>
+</resources>
