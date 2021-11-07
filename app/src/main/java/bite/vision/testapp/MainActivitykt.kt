@@ -8,12 +8,10 @@ import android.widget.TextView
 import android.widget.LinearLayout
 import android.widget.Toast
 import android.os.*
-import android.util.Log
 import androidx.annotation.RequiresApi
 import android.view.animation.LinearInterpolator
 import bite.vision.render_template.EncodingThread
 import java.io.File
-import java.lang.StringBuilder
 import java.util.*
 import android.os.Environment
 import android.content.pm.PackageManager
@@ -21,6 +19,7 @@ import android.net.Uri
 import androidx.core.app.ActivityCompat
 
 import android.os.Build
+import android.util.Log
 
 class MainActivitykt : AppCompatActivity(), EncodingThread.OnFinish {
 
@@ -43,7 +42,7 @@ class MainActivitykt : AppCompatActivity(), EncodingThread.OnFinish {
         animator.repeatCount = ValueAnimator.INFINITE
         animator.repeatMode = ValueAnimator.RESTART
         animator.interpolator = LinearInterpolator()
-        animator.duration = 2000L
+        animator.duration = 1500L
         animator.addUpdateListener { animation ->
             val progress = animation.animatedValue as Float
             val width = txtHelloWorld.width.toFloat()
@@ -58,10 +57,10 @@ class MainActivitykt : AppCompatActivity(), EncodingThread.OnFinish {
             renderTemplate.isEnabled = false
             renderTemplate.isClickable = false
             var h = linearLayout.height.toString()
-            h = h.substring(0, h.length - 2) + "00"
+            h = h.substring(0, h.length - 1) + "0"
 
             var w = linearLayout.width.toString()
-            w = w.substring(0, w.length - 2) + "00"
+            w = w.substring(0, w.length - 1) + "0"
 
             val prefix: String = UUID.randomUUID().toString()
 
@@ -72,12 +71,14 @@ class MainActivitykt : AppCompatActivity(), EncodingThread.OnFinish {
             val outputPath: String = File(dir,
                 "vid_$prefix.mp4").toString()
 
+            Log.d("getSize", "$w $h")
+
             if (linearLayout.height != 0) {
                 Thread(EncodingThread(w.toInt(),
                     h.toInt(),
-                    200000,
+                    15000000,
                     linearLayout, outputPath,
-                    this@MainActivitykt,this)).start()
+                    this)).start()
             }
 
         }

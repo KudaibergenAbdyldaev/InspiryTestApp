@@ -35,13 +35,14 @@ enum class GENERATE_TYPE {
 var mGenerateType = GENERATE_TYPE.INPUT_BUFFER
 var bufferWithBitmap = true // use a bitmap instead of generated data
 
-class EncodingThread(width: Int, height: Int, bitrate: Int,
-                     var layout: LinearLayout, var outputPath: String,
-                     var context: Context, var onFinish:OnFinish) :
+class EncodingThread(
+    width: Int, height: Int, bitrate: Int,
+    var layout: LinearLayout, var outputPath: String, var onFinish: OnFinish,
+) :
     Runnable {
 
 
-    interface OnFinish{
+    interface OnFinish {
         fun finishRecord(outputPath: String)
     }
 
@@ -56,8 +57,7 @@ class EncodingThread(width: Int, height: Int, bitrate: Int,
     // parameters for the encoder
     private val MIME_TYPE = "video/avc" // H.264 Advanced Video Coding
     private val IFRAME_INTERVAL = 10 // 10 seconds between I-frames
-    private val FRAME_RATE = 15
-    private val DURATION_SEC = 8 // 8 seconds of video
+    private val FRAME_RATE = 20 //fps
     private val mWidth: Int
     private val mHeight: Int
     private val mBitRate: Int
@@ -106,7 +106,6 @@ class EncodingThread(width: Int, height: Int, bitrate: Int,
 
             onFinish.finishRecord(outputPath)
         }
-
 
 
     }
@@ -165,7 +164,7 @@ class EncodingThread(width: Int, height: Int, bitrate: Int,
             format.setInteger(MediaFormat.KEY_BIT_RATE, mBitRate)
             format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE)
             format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL)
-            if (DEBUG) Log.d(TAG, "format: $format")
+            Log.d(TAG, "format: $format")
             // Create a MediaCodec for the desired codec, then configure it as an encoder with
             // our desired properties.
             mEncoder = MediaCodec.createByCodecName(codecInfo.name)
@@ -206,7 +205,7 @@ class EncodingThread(width: Int, height: Int, bitrate: Int,
         var encoderOutputBuffers = mEncoder!!.outputBuffers
         val info = MediaCodec.BufferInfo()
         var generateIndex = 0
-        val NUM_FRAMES = DURATION_SEC * FRAME_RATE // number of frame required to generate
+        val NUM_FRAMES = 120 // number of frame required to generate
 
         // The size of a frame of video data, in the formats we handle, is stride*sliceHeight
         // for Y, and (stride/2)*(sliceHeight/2) for each of the Cb and Cr channels.  Application
@@ -266,7 +265,10 @@ class EncodingThread(width: Int, height: Int, bitrate: Int,
                                     Bitmap.Config.ARGB_8888)
                                 val canvas = Canvas(bitmap)
                                 layout.draw(canvas)
-                                getNV21(mWidth, mHeight, bitmap)?.let { convertor!!.convert(it, inputBuf) }
+                                getNV21(mWidth, mHeight, bitmap)?.let {
+                                    convertor!!.convert(it,
+                                        inputBuf)
+                                }
                             }
                             mEncoder!!.queueInputBuffer(inputBufIndex,
                                 0,

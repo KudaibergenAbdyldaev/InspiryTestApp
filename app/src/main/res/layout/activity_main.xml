@@ -6,15 +6,16 @@
     android:layout_height="match_parent"
     android:background="@color/white"
     android:orientation="vertical"
+
     tools:context=".MainActivitykt">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/card_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_margin="20dp"
         app:cardBackgroundColor="#D3D2D2"
         app:cardCornerRadius="10dp"
+        android:layout_margin="40dp"
         app:layout_constraintBottom_toTopOf="@+id/render_template"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
