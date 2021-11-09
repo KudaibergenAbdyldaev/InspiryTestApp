@@ -61,7 +61,9 @@ class EncodingThread(
     private val mWidth: Int
     private val mHeight: Int
     private val mBitRate: Int
+    private var mFakePts: Long = 0
     private var colorFormat = 0
+    private var mTrackIndex = 0
 
     /**
      * MediaMuxer
@@ -124,6 +126,7 @@ class EncodingThread(
         } catch (ioe: IOException) {
             throw RuntimeException("MediaMuxer creation failed", ioe)
         }
+        mTrackIndex = -1
     }
 
     private fun releaseMuxer() {
@@ -167,7 +170,7 @@ class EncodingThread(
             Log.d(TAG, "format: $format")
             // Create a MediaCodec for the desired codec, then configure it as an encoder with
             // our desired properties.
-            mEncoder = MediaCodec.createByCodecName(codecInfo.name)
+            mEncoder = MediaCodec.createEncoderByType(MIME_TYPE)
             mEncoder!!.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
             if (mGenerateType == GENERATE_TYPE.INPUT_SURFACE) {
                 inputSurface = InputSurface(mEncoder!!.createInputSurface())
@@ -231,7 +234,7 @@ class EncodingThread(
                     if (DEBUG) Log.d(TAG, "inputBufIndex=$inputBufIndex")
                 }
                 if (inputBufIndex >= 0) {
-                    val ptsUsec = computePresentationTime(generateIndex)
+                    val ptsUsec = mFakePts
                     if (generateIndex == NUM_FRAMES) {
                         inputDone = true
                         // Send an empty frame with the end-of-stream flag set.  If we set EOS
@@ -278,7 +281,8 @@ class EncodingThread(
                         } else {
                             inputSurface!!.makeCurrent()
                             generateSurfaceFrame(generateIndex)
-                            inputSurface!!.setPresentationTime(computePresentationTime(generateIndex) * 1000)
+                            inputSurface!!.setPresentationTime(mFakePts)
+
                             if (DEBUG) Log.d(TAG, "inputSurface swapBuffers")
                             inputSurface!!.swapBuffers()
                         }
@@ -310,7 +314,7 @@ class EncodingThread(
                     if (DEBUG) Log.d(TAG, "encoder output format changed: $newFormat")
 
                     // now that we have the Magic Goodies, start the muxer
-                    mMuxer!!.addTrack(newFormat)
+                    mTrackIndex = mMuxer!!.addTrack(newFormat)
                     mMuxer!!.start()
                 } else if (encoderStatus < 0) {
                     Log.e(TAG,
@@ -323,6 +327,8 @@ class EncodingThread(
                     // It's usually necessary to adjust the ByteBuffer values to match BufferInfo.
                     encodedData!!.position(info.offset)
                     encodedData.limit(info.offset + info.size)
+                    info.presentationTimeUs = mFakePts
+                    mFakePts += 1000000L / FRAME_RATE
                     /**
                      * Save to mp4
                      */
@@ -332,7 +338,8 @@ class EncodingThread(
                     try {
                         encodedData.position(info.offset)
                         encodedData.limit(info.offset + info.size)
-                        mMuxer!!.writeSampleData(0, encodedData, info)
+                        info.presentationTimeUs = mFakePts
+                        mMuxer!!.writeSampleData(mTrackIndex, encodedData, info)
                         Log.d(TAG, "sent " + info.size + " bytes to muxer")
                     } catch (ioe: Exception) {
                         Log.w(TAG, "failed writing debug data to file")
@@ -357,9 +364,9 @@ class EncodingThread(
     /**
      * Generates the presentation time for frame N, in microseconds.
      */
-    private fun computePresentationTime(frameIndex: Int): Long {
-        return (132 + frameIndex * 1000000 / FRAME_RATE).toLong()
-    }
+//    private fun computePresentationTime(frameIndex: Int): Long {
+//        return (132 + frameIndex * 1000000 / FRAME_RATE).toLong()
+//    }
 
     /**
      * Generates a frame of data using GL commands.
